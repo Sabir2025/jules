@@ -1,7 +1,8 @@
 const CONFIG = {
   BOT_TOKEN: '8809578556:AAFSkAZltVfxB0BFoB-KCLxYzcap1fhtGEM',
-  GROUP_CHAT_ID: '', // Will be determined
-  SPREADSHEET_ID: '1BT1PrFmpwHqBS5iWfjjryg_VAlvXqLvohxAxu2u2eoo'
+  GROUP_CHAT_ID: '-1002361668875',
+  SPREADSHEET_ID: '1BT1PrFmpwHqBS5iWfjjryg_VAlvXqLvohxAxu2u2eoo',
+  WEBAPP_URL: '' // Вставьте сюда URL после деплоя
 };
 
 function doGet(e) {

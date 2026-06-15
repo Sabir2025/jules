@@ -7,7 +7,7 @@ function sendToTelegram(text, cargoId) {
     inline_keyboard: [[
       {
         text: "Взять груз",
-        url: `https://script.google.com/macros/s/AKfycbzL5zGZp5_V3jX_p4sB1K6_kS7sP2m8H3M/exec?page=driver-app&cargoId=${cargoId}`
+        url: `${CONFIG.WEBAPP_URL}?page=driver-app&cargoId=${cargoId}`
       }
     ]]
   };
