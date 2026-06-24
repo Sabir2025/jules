@@ -1,0 +1,100 @@
+<script type="text/template" id="stats-template">
+  <div class="flex flex-col space-y-6">
+    <div class="flex items-center space-x-4">
+      <button onclick="showDashboard()" class="p-2 glass rounded-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <h2 class="text-xl font-bold">Статистика</h2>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="glass p-5 rounded-2xl">
+        <p class="text-slate-400 text-xs mb-1">Активные</p>
+        <h3 id="stat-active" class="text-2xl font-bold text-indigo-400">0</h3>
+      </div>
+      <div class="glass p-5 rounded-2xl">
+        <p class="text-slate-400 text-xs mb-1">Доход (₸)</p>
+        <h3 id="stat-revenue" class="text-2xl font-bold text-emerald-400">0</h3>
+      </div>
+    </div>
+
+    <div class="glass p-5 rounded-2xl">
+      <h3 class="text-sm font-medium mb-4 text-slate-300">Динамика заказов</h3>
+      <canvas id="statsChart" height="200"></canvas>
+    </div>
+
+    <div class="glass p-5 rounded-2xl">
+      <h3 class="text-sm font-medium mb-4 text-slate-300">Топ водителей</h3>
+      <div id="drivers-list" class="space-y-4">
+        <p class="text-slate-500 text-xs">Нет данных</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadStats() {
+      try {
+        const stats = await callApi('getStats', currentUser.phone);
+        document.getElementById('stat-active').innerText = stats.active;
+        document.getElementById('stat-revenue').innerText = stats.totalRevenue.toLocaleString();
+
+        // Render Drivers
+        const driversList = document.getElementById('drivers-list');
+        const driverEntries = Object.entries(stats.byDriver).sort((a,b) => b[1] - a[1]);
+        if (driverEntries.length > 0) {
+          driversList.innerHTML = driverEntries.map(([name, count]) => `
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span class="text-slate-300 font-medium">${name}</span>
+                <span class="text-indigo-400 font-bold">${count} рейсов</span>
+              </div>
+              <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-indigo-500 h-full" style="width: ${(count/driverEntries[0][1])*100}%"></div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Prepare chart
+        const ctx = document.getElementById('statsChart').getContext('2d');
+
+        // Simple aggregation by date
+        const countsByDate = {};
+        stats.history.forEach(h => {
+          const d = new Date(h.date).toLocaleDateString();
+          countsByDate[d] = (countsByDate[d] || 0) + 1;
+        });
+
+        const labels = Object.keys(countsByDate).slice(-7);
+        const data = labels.map(l => countsByDate[l]);
+
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Заказы',
+              data: data,
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+              x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+            }
+          }
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  </script>
+</script>

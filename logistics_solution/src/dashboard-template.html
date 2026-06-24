@@ -1,0 +1,78 @@
+<script type="text/template" id="dashboard-template">
+  <div class="flex flex-col space-y-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h2 class="text-xl font-bold">Привет, <span id="user-name"></span>!</h2>
+        <p class="text-slate-400 text-sm">Ваши актуальные грузы</p>
+      </div>
+      <button onclick="logout()" class="p-2 glass rounded-lg text-slate-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="flex space-x-4">
+      <button onclick="showAddCargo()" class="flex-1 btn-primary py-4 rounded-2xl flex items-center justify-center space-x-2 shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+        </svg>
+        <span>Новый груз</span>
+      </button>
+      <button onclick="showStats()" class="flex-1 glass py-4 rounded-2xl flex items-center justify-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+        </svg>
+        <span>Отчеты</span>
+      </button>
+    </div>
+
+    <div id="cargo-list" class="space-y-4 pb-20">
+      <!-- Cargo items -->
+      <div class="animate-pulse flex space-y-4 flex-col">
+        <div class="h-24 bg-slate-800 rounded-2xl"></div>
+        <div class="h-24 bg-slate-800 rounded-2xl"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (currentUser) document.getElementById('user-name').innerText = currentUser.name;
+
+    async function loadMyCargo() {
+      try {
+        const list = await callApi('getMyCargo', currentUser.phone);
+        const container = document.getElementById('cargo-list');
+
+        if (list.length === 0) {
+          container.innerHTML = '<div class="text-center py-10 text-slate-500">У вас пока нет грузов</div>';
+          return;
+        }
+
+        container.innerHTML = list.map(item => `
+          <div class="glass p-5 rounded-2xl">
+            <div class="flex justify-between items-start mb-3">
+              <span class="text-xs font-bold text-indigo-400 uppercase">${item.id}</span>
+              <span class="px-3 py-1 rounded-full text-[10px] font-bold ${item.status === 'Поиск' ? 'bg-amber-500/20 text-amber-500' : 'bg-emerald-500/20 text-emerald-500'}">
+                ${item.status}
+              </span>
+            </div>
+            <h3 class="font-bold text-lg mb-1">${item.route}</h3>
+            <p class="text-slate-400 text-sm mb-4">${item.cargo} • ${item.weight}</p>
+            <div class="flex justify-between items-center border-t border-slate-700 pt-3">
+              <span class="text-indigo-300 font-bold">${item.price} ₸</span>
+              <span class="text-slate-500 text-xs">${new Date(item.date).toLocaleDateString()}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('movex_user');
+      location.reload();
+    }
+  </script>
+</script>

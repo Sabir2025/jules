@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="data:application/manifest+json,{'name':'MoveX Logistics','short_name':'MoveX','start_url':'.','display':'standalone','background_color':'#0f172a','theme_color':'#6366f1'}">
+    <style>
+      body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+      .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+      .gradient-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+      .btn-primary { background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%); transition: all 0.3s; }
+      .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+      input, select { background: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
+      .loader { border-top-color: #6366f1; animation: spinner 1.5s linear infinite; }
+      @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <div id="app" class="max-w-md mx-auto px-4 py-6">
+      <!-- Content will be injected here -->
+      <div id="loading" class="flex justify-center items-center h-64">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <?!= include('auth-template'); ?>
+    <?!= include('dashboard-template'); ?>
+    <?!= include('add-cargo-template'); ?>
+    <?!= include('stats-template'); ?>
+
+    <script>
+      let currentUser = JSON.parse(localStorage.getItem('movex_user')) || null;
+
+      function init() {
+        if (!currentUser) {
+          showAuth();
+        } else {
+          showDashboard();
+        }
+      }
+
+      function showAuth() {
+        render('auth-template');
+      }
+
+      function showDashboard() {
+        render('dashboard-template');
+        loadMyCargo();
+      }
+
+      function showAddCargo() {
+        render('add-cargo-template');
+      }
+
+      function showStats() {
+        render('stats-template');
+        loadStats();
+      }
+
+      function render(templateId, data = {}) {
+        const app = document.getElementById('app');
+        const template = document.getElementById(templateId).innerHTML;
+        app.innerHTML = template;
+      }
+
+      // API Wrappers
+      function callApi(action, data) {
+        return new Promise((resolve, reject) => {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .apiHandler(action, data);
+        });
+      }
+
+      window.onload = init;
+    </script>
+  </body>
+</html>
