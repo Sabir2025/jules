@@ -257,8 +257,9 @@ function ensure_upload_dir(): void {
 function scan_site_files(array $managedPages): array {
     $found   = [];
     $managed = [];
+    // OPTIMIZATION: Store managed pages as associative array keys for O(1) lookup
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        $managed[($p['slug'] ?? '') . '.html'] = true;
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
@@ -266,14 +267,21 @@ function scan_site_files(array $managedPages): array {
     foreach ($files as $path) {
         $basename = basename($path);
         // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        // OPTIMIZATION: Changed in_array O(N) lookup to O(1) isset() lookup
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
         $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
-            $title = trim($m[1]);
+
+        // OPTIMIZATION: Avoid loading entire HTML file (which can be very large) into memory.
+        // Instead, read only the first 32 KB of the file, which almost always contains the <head> and <title> tag.
+        $handle = fopen($path, 'r');
+        if ($handle !== false) {
+            $content = fread($handle, 32768);
+            fclose($handle);
+            if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
+                $title = trim($m[1]);
+            }
         }
 
         $found[] = [
