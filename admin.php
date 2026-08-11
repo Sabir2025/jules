@@ -931,7 +931,7 @@ body {
     <div class="card">
         <h1>🔐 Admin Panel</h1>
         <p>Enter password to continue</p>
-        <input type="password" id="password-input" placeholder="Password" autofocus>
+        <input type="password" id="password-input" placeholder="Password" aria-label="Password" autofocus>
         <button class="btn btn-primary" id="login-btn">Sign In</button>
         <div id="login-error">Wrong password</div>
     </div>
@@ -1007,11 +1007,11 @@ body {
 <div class="modal-overlay" id="password-modal">
     <div class="modal">
         <h2>🔑 Change Password</h2>
-        <label>Current password</label>
+        <label for="pwd-current">Current password</label>
         <input type="password" id="pwd-current" autocomplete="off">
-        <label>New password (min 4 chars)</label>
+        <label for="pwd-new">New password (min 4 chars)</label>
         <input type="password" id="pwd-new" autocomplete="off">
-        <label>Confirm new password</label>
+        <label for="pwd-confirm">Confirm new password</label>
         <input type="password" id="pwd-confirm" autocomplete="off">
         <div class="modal-actions">
             <button class="btn btn-ghost" id="pwd-cancel">Cancel</button>
@@ -1178,6 +1178,7 @@ function renderPageList() {
         renameBtn.className = 'btn btn-icon btn-ghost';
         renameBtn.textContent = '✎';
         renameBtn.title = 'Rename';
+        renameBtn.setAttribute('aria-label', `Rename page ${p.title || 'Untitled'}`);
         renameBtn.addEventListener('click', async e => {
             e.stopPropagation();
             const newTitle = prompt('New title:', p.title);
@@ -1192,6 +1193,7 @@ function renderPageList() {
         delBtn.className = 'btn btn-icon btn-ghost';
         delBtn.textContent = '✕';
         delBtn.title = 'Delete page';
+        delBtn.setAttribute('aria-label', `Delete page ${p.title || 'Untitled'}`);
         delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -1223,6 +1225,7 @@ function renderPageList() {
             importBtn.className = 'btn btn-icon btn-ghost';
             importBtn.textContent = '📥';
             importBtn.title = 'Import into editor';
+            importBtn.setAttribute('aria-label', `Import site file ${f.filename}`);
             importBtn.addEventListener('click', async e => {
                 e.stopPropagation();
                 await importSiteFile(f.filename);
@@ -1395,6 +1398,7 @@ function createBlockElement(block, index) {
         upBtn.className = 'btn btn-icon btn-ghost';
         upBtn.textContent = '↑';
         upBtn.title = 'Move up';
+        upBtn.setAttribute('aria-label', `Move ${block.type} block up`);
         upBtn.addEventListener('click', () => moveBlock(block.id, -1));
         actions.appendChild(upBtn);
     }
@@ -1404,6 +1408,7 @@ function createBlockElement(block, index) {
         downBtn.className = 'btn btn-icon btn-ghost';
         downBtn.textContent = '↓';
         downBtn.title = 'Move down';
+        downBtn.setAttribute('aria-label', `Move ${block.type} block down`);
         downBtn.addEventListener('click', () => moveBlock(block.id, 1));
         actions.appendChild(downBtn);
     }
@@ -1412,6 +1417,7 @@ function createBlockElement(block, index) {
     delBtn.className = 'btn btn-icon btn-ghost';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete block';
+    delBtn.setAttribute('aria-label', `Delete ${block.type} block`);
     delBtn.addEventListener('click', () => removeBlock(block.id));
     actions.appendChild(delBtn);
 
@@ -1439,6 +1445,9 @@ function moveBlock(id, direction) {
 
 // ─── Remove block ─────────────────────────────────────────────────────────────
 function removeBlock(id) {
+    const block = blocks.find(b => b.id === id);
+    const type = block ? block.type : 'block';
+    if (!confirm(`Delete this ${type}? This cannot be undone.`)) return;
     blocks = blocks.filter(b => b.id !== id);
     renderBlocks();
 }
