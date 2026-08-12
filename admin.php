@@ -257,8 +257,13 @@ function ensure_upload_dir(): void {
 function scan_site_files(array $managedPages): array {
     $found   = [];
     $managed = [];
+
+    // Performance win: Convert $O(N)$ linear lookup with in_array to $O(1)$ hash table lookup.
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        $slug = $p['slug'] ?? '';
+        if ($slug !== '') {
+            $managed[$slug . '.html'] = true;
+        }
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
@@ -266,14 +271,36 @@ function scan_site_files(array $managedPages): array {
     foreach ($files as $path) {
         $basename = basename($path);
         // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
-        $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
-            $title = trim($m[1]);
+
+        // Performance win: Instead of reading the entire file (which could be very large)
+        // using file_get_contents, open a read stream and process in small chunks.
+        // The <title> tag is in the <head> section, which is always at the beginning.
+        $handle = fopen($path, 'r');
+        if ($handle !== false) {
+            $content = '';
+            $maxBytes = 65536; // Read up to 64KB maximum
+            $bytesRead = 0;
+            while (!feof($handle) && $bytesRead < $maxBytes) {
+                $chunk = fread($handle, 4096);
+                if ($chunk === false) {
+                    break;
+                }
+                $content .= $chunk;
+                $bytesRead += strlen($chunk);
+
+                // Break early if we've already parsed past the title or the head section
+                if (stripos($content, '</title>') !== false || stripos($content, '</head>') !== false) {
+                    break;
+                }
+            }
+            fclose($handle);
+
+            if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
+                $title = trim($m[1]);
+            }
         }
 
         $found[] = [
