@@ -253,27 +253,56 @@ function ensure_upload_dir(): void {
 
 // ─── SITE SCANNER ─────────────────────────────────────────────────────────────
 
-/** Scan site root for .html files not yet managed by the admin panel. */
+/**
+ * Scan site root for .html files not yet managed by the admin panel.
+ *
+ * Optimized with:
+ *   1. O(1) associative array lookup for $managed pages instead of O(N) in_array().
+ *   2. Memory-efficient chunked/buffered streaming with fopen() instead of file_get_contents().
+ *      Reads maximum 64KB in 8KB chunks, allowing early termination once <title> is found.
+ */
 function scan_site_files(array $managedPages): array {
     $found   = [];
     $managed = [];
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        $slug = $p['slug'] ?? '';
+        if ($slug !== '') {
+            $managed[$slug . '.html'] = true;
+        }
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
 
     foreach ($files as $path) {
         $basename = basename($path);
-        // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        // Skip admin.php itself (not .html) and any .html that's already managed (O(1) lookup)
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
-        $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
-            $title = trim($m[1]);
+
+        // Memory-efficient buffered streaming to find <title> tag early (max 64KB, in 8KB chunks)
+        $handle = @fopen($path, 'r');
+        if ($handle !== false) {
+            $content = '';
+            $maxBytes = 64 * 1024;
+            $chunkSize = 8192;
+            $bytesRead = 0;
+
+            while (!feof($handle) && $bytesRead < $maxBytes) {
+                $chunk = fread($handle, $chunkSize);
+                if ($chunk === false) {
+                    break;
+                }
+                $content .= $chunk;
+                $bytesRead += strlen($chunk);
+
+                // Match the title regex and terminate early if found
+                if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
+                    $title = trim($m[1]);
+                    break;
+                }
+            }
+            fclose($handle);
         }
 
         $found[] = [
