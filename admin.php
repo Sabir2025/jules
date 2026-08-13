@@ -917,6 +917,22 @@ body {
 .toast.success { border-left: 3px solid var(--success); }
 .toast.error { border-left: 3px solid var(--accent); }
 
+/* ═══ Focus Styles for Accessibility ══════════════════════════════════════ */
+input:focus-visible,
+button:focus-visible,
+[contenteditable="true"]:focus-visible {
+    outline: 2px solid var(--accent-hover) !important;
+    outline-offset: 2px;
+}
+
+.page-list li:focus-visible,
+.widget-item:focus-visible,
+.gallery-add-btn:focus-visible,
+.upload-area:focus-visible {
+    outline: 2px solid var(--accent) !important;
+    outline-offset: -2px;
+}
+
 /* ═══ SCROLLBAR ════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -931,9 +947,10 @@ body {
     <div class="card">
         <h1>🔐 Admin Panel</h1>
         <p>Enter password to continue</p>
+        <label for="password-input" class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Password</label>
         <input type="password" id="password-input" placeholder="Password" autofocus>
         <button class="btn btn-primary" id="login-btn">Sign In</button>
-        <div id="login-error">Wrong password</div>
+        <div id="login-error" role="alert">Wrong password</div>
     </div>
 </div>
 
@@ -947,7 +964,7 @@ body {
             <span class="stat">🖼️ Images: <strong id="stat-images">0</strong></span>
         </div>
         <div class="topbar-actions">
-            <span id="save-status"></span>
+            <span id="save-status" role="status" aria-live="polite"></span>
             <button class="btn btn-ghost btn-sm" id="preview-btn" title="Preview current page">👁️ Preview</button>
             <button class="btn btn-ghost btn-sm" id="export-btn" title="Export all pages to .html">📦 Export</button>
             <button class="btn btn-ghost btn-sm" id="password-btn" title="Change password">🔑 Password</button>
@@ -969,15 +986,15 @@ body {
             <div class="sidebar-section">
                 <h3>🧩 Widgets</h3>
                 <div class="widget-list">
-                    <div class="widget-item" data-type="text">
+                    <div class="widget-item" data-type="text" tabindex="0" role="button" aria-label="Add text block">
                         <span class="icon">📝</span>
                         <span class="label">Text</span>
                     </div>
-                    <div class="widget-item" data-type="image">
+                    <div class="widget-item" data-type="image" tabindex="0" role="button" aria-label="Add image block">
                         <span class="icon">🖼️</span>
                         <span class="label">Image</span>
                     </div>
-                    <div class="widget-item" data-type="gallery">
+                    <div class="widget-item" data-type="gallery" tabindex="0" role="button" aria-label="Add gallery block">
                         <span class="icon">🗂️</span>
                         <span class="label">Gallery</span>
                     </div>
@@ -1007,17 +1024,17 @@ body {
 <div class="modal-overlay" id="password-modal">
     <div class="modal">
         <h2>🔑 Change Password</h2>
-        <label>Current password</label>
+        <label for="pwd-current">Current password</label>
         <input type="password" id="pwd-current" autocomplete="off">
-        <label>New password (min 4 chars)</label>
+        <label for="pwd-new">New password (min 4 chars)</label>
         <input type="password" id="pwd-new" autocomplete="off">
-        <label>Confirm new password</label>
+        <label for="pwd-confirm">Confirm new password</label>
         <input type="password" id="pwd-confirm" autocomplete="off">
         <div class="modal-actions">
             <button class="btn btn-ghost" id="pwd-cancel">Cancel</button>
             <button class="btn btn-primary" id="pwd-save">Change</button>
         </div>
-        <div id="pwd-error" style="color:var(--accent);font-size:.8rem;margin-top:8px;display:none;"></div>
+        <div id="pwd-error" role="alert" style="color:var(--accent);font-size:.8rem;margin-top:8px;display:none;"></div>
     </div>
 </div>
 
@@ -1162,6 +1179,9 @@ function renderPageList() {
         const li = document.createElement('li');
         li.className = id === currentPageId ? 'active' : '';
         li.dataset.pageId = id;
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        li.setAttribute('aria-label', (p.title || 'Untitled') + ' page');
 
         const titleSpan = document.createElement('span');
         titleSpan.className = 'page-title';
@@ -1178,6 +1198,7 @@ function renderPageList() {
         renameBtn.className = 'btn btn-icon btn-ghost';
         renameBtn.textContent = '✎';
         renameBtn.title = 'Rename';
+        renameBtn.setAttribute('aria-label', 'Rename page ' + (p.title || 'Untitled'));
         renameBtn.addEventListener('click', async e => {
             e.stopPropagation();
             const newTitle = prompt('New title:', p.title);
@@ -1192,6 +1213,7 @@ function renderPageList() {
         delBtn.className = 'btn btn-icon btn-ghost';
         delBtn.textContent = '✕';
         delBtn.title = 'Delete page';
+        delBtn.setAttribute('aria-label', 'Delete page ' + (p.title || 'Untitled'));
         delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -1200,6 +1222,12 @@ function renderPageList() {
         li.appendChild(delBtn);
 
         li.addEventListener('click', () => selectPage(id));
+        li.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectPage(id);
+            }
+        });
         pageList.appendChild(li);
     });
 
@@ -1213,6 +1241,9 @@ function renderPageList() {
         discoveredFiles.forEach(f => {
             const li = document.createElement('li');
             li.className = 'disc-li';
+            li.tabIndex = 0;
+            li.setAttribute('role', 'button');
+            li.setAttribute('aria-label', f.title + ' file');
 
             const titleSpan = document.createElement('span');
             titleSpan.className = 'page-title';
@@ -1223,12 +1254,19 @@ function renderPageList() {
             importBtn.className = 'btn btn-icon btn-ghost';
             importBtn.textContent = '📥';
             importBtn.title = 'Import into editor';
+            importBtn.setAttribute('aria-label', 'Import ' + f.filename + ' into editor');
             importBtn.addEventListener('click', async e => {
                 e.stopPropagation();
                 await importSiteFile(f.filename);
             });
             li.appendChild(importBtn);
 
+            li.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    importSiteFile(f.filename);
+                }
+            });
             pageList.appendChild(li);
         });
     }
@@ -1395,6 +1433,7 @@ function createBlockElement(block, index) {
         upBtn.className = 'btn btn-icon btn-ghost';
         upBtn.textContent = '↑';
         upBtn.title = 'Move up';
+        upBtn.setAttribute('aria-label', 'Move ' + block.type + ' block up');
         upBtn.addEventListener('click', () => moveBlock(block.id, -1));
         actions.appendChild(upBtn);
     }
@@ -1404,6 +1443,7 @@ function createBlockElement(block, index) {
         downBtn.className = 'btn btn-icon btn-ghost';
         downBtn.textContent = '↓';
         downBtn.title = 'Move down';
+        downBtn.setAttribute('aria-label', 'Move ' + block.type + ' block down');
         downBtn.addEventListener('click', () => moveBlock(block.id, 1));
         actions.appendChild(downBtn);
     }
@@ -1412,6 +1452,7 @@ function createBlockElement(block, index) {
     delBtn.className = 'btn btn-icon btn-ghost';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete block';
+    delBtn.setAttribute('aria-label', 'Delete ' + block.type + ' block');
     delBtn.addEventListener('click', () => removeBlock(block.id));
     actions.appendChild(delBtn);
 
@@ -1471,10 +1512,14 @@ function createImageBody(block) {
     const uploadArea = document.createElement('div');
     uploadArea.className = 'upload-area';
     uploadArea.innerHTML = '<span class="icon">📁</span> Click or drag an image here';
+    uploadArea.tabIndex = 0;
+    uploadArea.setAttribute('role', 'button');
+    uploadArea.setAttribute('aria-label', 'Upload image');
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
+    fileInput.tabIndex = -1;
     fileInput.addEventListener('change', () => {
         if (fileInput.files[0]) uploadFile(fileInput.files[0], block, img, uploadArea);
     });
@@ -1482,6 +1527,12 @@ function createImageBody(block) {
 
     // Click to upload
     uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
 
     // Drag-and-drop for image files
     uploadArea.addEventListener('dragover', e => {
@@ -1562,7 +1613,16 @@ function createGalleryBody(block) {
     const addBtn = document.createElement('div');
     addBtn.className = 'gallery-add-btn';
     addBtn.textContent = '+';
+    addBtn.tabIndex = 0;
+    addBtn.setAttribute('role', 'button');
+    addBtn.setAttribute('aria-label', 'Add image to gallery');
     addBtn.addEventListener('click', () => fileInput.click());
+    addBtn.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
 
     // DnD on add button / grid
     const dndTarget = grid;
@@ -1632,7 +1692,7 @@ function renderGalleryGrid(grid, block) {
 
 // ─── Add widget (click) ───────────────────────────────────────────────────────
 $$('.widget-item').forEach(w => {
-    w.addEventListener('click', () => {
+    const handleAddWidget = () => {
         if (!currentPageId) {
             showToast('Select a page first', 'error');
             return;
@@ -1649,6 +1709,14 @@ $$('.widget-item').forEach(w => {
         // Scroll to bottom
         canvas.scrollTop = canvas.scrollHeight;
         showToast(`Added ${type} block`);
+    };
+
+    w.addEventListener('click', handleAddWidget);
+    w.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleAddWidget();
+        }
     });
 });
 

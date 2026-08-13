@@ -1,0 +1,3 @@
+## 2026-08-13 - [Keyboard Accessibility and Screen Reader Assistance for Custom CMS Components]
+**Learning:** Adding screen reader attributes (`role`, `aria-label`, `aria-live`) and matching `for/id` label relationships significantly improves screen reader accessibility without modifying the layout or aesthetic design. Custom interactive elements (like lists and div-buttons) must always receive `tabindex="0"`, `role="button"`, and explicit `keydown` event listeners for 'Enter' and 'Space' keys to ensure full keyboard navigation compatibility.
+**Action:** Always include keyboard event handlers alongside click handlers on custom elements, specify visual focus indicators using `:focus-visible`, and tie labels directly to form inputs.
