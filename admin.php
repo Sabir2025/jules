@@ -726,8 +726,10 @@ body {
     border-radius: var(--radius-sm); cursor: pointer;
     transition: background var(--transition);
     font-size: .82rem;
+    outline: none;
 }
-.page-list li:hover { background: var(--bg-card); }
+.page-list li:hover, .page-list li:focus-visible { background: var(--bg-card); }
+.page-list li:focus-visible { outline: 1px solid var(--accent); }
 .page-list li.active { background: var(--bg-card); border-left: 2px solid var(--accent); }
 .page-list li .page-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .page-list li .page-badge {
@@ -735,7 +737,7 @@ body {
     background: var(--bg-primary); padding: 1px 6px; border-radius: 10px;
 }
 .page-list li .btn-icon { opacity: 0; transition: opacity var(--transition); }
-.page-list li:hover .btn-icon { opacity: 1; }
+.page-list li:hover .btn-icon, .page-list li:focus-within .btn-icon { opacity: 1; }
 .page-list .sep { font-size: .65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .5px; padding: 8px 10px 4px; cursor: default; border-left: none !important; pointer-events: none; }
 .page-list .sep:hover { background: transparent; }
 .page-list .disc-li { opacity: .75; }
@@ -749,8 +751,10 @@ body {
     cursor: pointer; user-select: none;
     transition: background var(--transition), transform var(--transition);
     border: 1px solid transparent; font-size: .82rem;
+    outline: none;
 }
-.widget-item:hover { background: var(--bg-card); border-color: var(--accent); transform: translateX(2px); }
+.widget-item:hover, .widget-item:focus-visible { background: var(--bg-card); border-color: var(--accent); transform: translateX(2px); }
+.widget-item:focus-visible { outline: 1px solid var(--accent); }
 .widget-item .icon { font-size: 1.1rem; flex-shrink: 0; }
 .widget-item .label { font-weight: 500; }
 
@@ -1178,6 +1182,7 @@ function renderPageList() {
         renameBtn.className = 'btn btn-icon btn-ghost';
         renameBtn.textContent = '✎';
         renameBtn.title = 'Rename';
+        renameBtn.setAttribute('aria-label', `Rename page ${p.title}`);
         renameBtn.addEventListener('click', async e => {
             e.stopPropagation();
             const newTitle = prompt('New title:', p.title);
@@ -1192,6 +1197,7 @@ function renderPageList() {
         delBtn.className = 'btn btn-icon btn-ghost';
         delBtn.textContent = '✕';
         delBtn.title = 'Delete page';
+        delBtn.setAttribute('aria-label', `Delete page ${p.title}`);
         delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -1199,7 +1205,15 @@ function renderPageList() {
         });
         li.appendChild(delBtn);
 
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
         li.addEventListener('click', () => selectPage(id));
+        li.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectPage(id);
+            }
+        });
         pageList.appendChild(li);
     });
 
@@ -1213,6 +1227,8 @@ function renderPageList() {
         discoveredFiles.forEach(f => {
             const li = document.createElement('li');
             li.className = 'disc-li';
+            li.tabIndex = 0;
+            li.setAttribute('role', 'button');
 
             const titleSpan = document.createElement('span');
             titleSpan.className = 'page-title';
@@ -1223,11 +1239,22 @@ function renderPageList() {
             importBtn.className = 'btn btn-icon btn-ghost';
             importBtn.textContent = '📥';
             importBtn.title = 'Import into editor';
+            importBtn.setAttribute('aria-label', `Import ${f.title} into editor`);
             importBtn.addEventListener('click', async e => {
                 e.stopPropagation();
                 await importSiteFile(f.filename);
             });
             li.appendChild(importBtn);
+
+            li.addEventListener('click', async () => {
+                await importSiteFile(f.filename);
+            });
+            li.addEventListener('keydown', async e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    await importSiteFile(f.filename);
+                }
+            });
 
             pageList.appendChild(li);
         });
@@ -1395,6 +1422,7 @@ function createBlockElement(block, index) {
         upBtn.className = 'btn btn-icon btn-ghost';
         upBtn.textContent = '↑';
         upBtn.title = 'Move up';
+        upBtn.setAttribute('aria-label', `Move ${block.type} block up`);
         upBtn.addEventListener('click', () => moveBlock(block.id, -1));
         actions.appendChild(upBtn);
     }
@@ -1404,6 +1432,7 @@ function createBlockElement(block, index) {
         downBtn.className = 'btn btn-icon btn-ghost';
         downBtn.textContent = '↓';
         downBtn.title = 'Move down';
+        downBtn.setAttribute('aria-label', `Move ${block.type} block down`);
         downBtn.addEventListener('click', () => moveBlock(block.id, 1));
         actions.appendChild(downBtn);
     }
@@ -1412,6 +1441,7 @@ function createBlockElement(block, index) {
     delBtn.className = 'btn btn-icon btn-ghost';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete block';
+    delBtn.setAttribute('aria-label', `Delete ${block.type} block`);
     delBtn.addEventListener('click', () => removeBlock(block.id));
     actions.appendChild(delBtn);
 
@@ -1614,6 +1644,7 @@ function renderGalleryGrid(grid, block) {
         const rmBtn = document.createElement('button');
         rmBtn.className = 'remove-img';
         rmBtn.textContent = '✕';
+        rmBtn.setAttribute('aria-label', `Remove image ${idx + 1} from gallery`);
         rmBtn.addEventListener('click', async e => {
             e.stopPropagation();
             await fetch('?action=delete-file', {
@@ -1632,7 +1663,9 @@ function renderGalleryGrid(grid, block) {
 
 // ─── Add widget (click) ───────────────────────────────────────────────────────
 $$('.widget-item').forEach(w => {
-    w.addEventListener('click', () => {
+    w.tabIndex = 0;
+    w.setAttribute('role', 'button');
+    const addWidget = () => {
         if (!currentPageId) {
             showToast('Select a page first', 'error');
             return;
@@ -1649,6 +1682,13 @@ $$('.widget-item').forEach(w => {
         // Scroll to bottom
         canvas.scrollTop = canvas.scrollHeight;
         showToast(`Added ${type} block`);
+    };
+    w.addEventListener('click', addWidget);
+    w.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            addWidget();
+        }
     });
 });
 
