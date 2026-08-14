@@ -253,27 +253,35 @@ function ensure_upload_dir(): void {
 
 // ─── SITE SCANNER ─────────────────────────────────────────────────────────────
 
-/** Scan site root for .html files not yet managed by the admin panel. */
+/** Scan site root for .html files not yet managed by the admin panel.
+ * Optimized with O(1) hash map lookups and loop-free buffered streaming for HTML <title> extraction.
+ */
 function scan_site_files(array $managedPages): array {
     $found   = [];
     $managed = [];
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        $filename = ($p['slug'] ?? '') . '.html';
+        $managed[$filename] = true;
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
 
     foreach ($files as $path) {
         $basename = basename($path);
-        // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        // Skip admin.php itself (not .html) and any .html that's already managed (O(1) lookup)
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
-        $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
-            $title = trim($m[1]);
+
+        // Optimize: Use streaming to extract the <title> tag early (up to 64KB max) in a single fast read operation
+        $fh = fopen($path, 'r');
+        if ($fh !== false) {
+            $content = fread($fh, 65536); // Read up to 64KB in a single native call to avoid loop overhead
+            fclose($fh);
+
+            if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
+                $title = trim($m[1]);
+            }
         }
 
         $found[] = [
