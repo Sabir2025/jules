@@ -1,0 +1,3 @@
+## 2026-08-14 - Interactive Element Keyboard and Screen-Reader Accessibility
+**Learning:** Standard list items and static layout divs used as interactive action items lack native keyboard navigation and screen-reader context. By explicitly adding `tabindex="0"`, `role="button"`, focus-visible styles, and keydown listeners for 'Enter'/'Space', we make them fully inclusive. Adding descriptive `aria-label` attributes to icon-only buttons completes the screen-reader accessibility layer.
+**Action:** Always ensure that custom/non-native interactive controls are accompanied by proper ARIA roles, tabindex, focus-visible states, keyboard listeners, and informative aria-labels.
