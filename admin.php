@@ -1007,11 +1007,11 @@ body {
 <div class="modal-overlay" id="password-modal">
     <div class="modal">
         <h2>🔑 Change Password</h2>
-        <label>Current password</label>
+        <label for="pwd-current">Current password</label>
         <input type="password" id="pwd-current" autocomplete="off">
-        <label>New password (min 4 chars)</label>
+        <label for="pwd-new">New password (min 4 chars)</label>
         <input type="password" id="pwd-new" autocomplete="off">
-        <label>Confirm new password</label>
+        <label for="pwd-confirm">Confirm new password</label>
         <input type="password" id="pwd-confirm" autocomplete="off">
         <div class="modal-actions">
             <button class="btn btn-ghost" id="pwd-cancel">Cancel</button>
@@ -1177,7 +1177,8 @@ function renderPageList() {
         const renameBtn = document.createElement('button');
         renameBtn.className = 'btn btn-icon btn-ghost';
         renameBtn.textContent = '✎';
-        renameBtn.title = 'Rename';
+        renameBtn.title = 'Rename page';
+        renameBtn.setAttribute('aria-label', `Rename ${p.title || 'page'}`);
         renameBtn.addEventListener('click', async e => {
             e.stopPropagation();
             const newTitle = prompt('New title:', p.title);
@@ -1192,6 +1193,7 @@ function renderPageList() {
         delBtn.className = 'btn btn-icon btn-ghost';
         delBtn.textContent = '✕';
         delBtn.title = 'Delete page';
+        delBtn.setAttribute('aria-label', `Delete ${p.title || 'page'}`);
         delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -1223,6 +1225,7 @@ function renderPageList() {
             importBtn.className = 'btn btn-icon btn-ghost';
             importBtn.textContent = '📥';
             importBtn.title = 'Import into editor';
+            importBtn.setAttribute('aria-label', `Import ${f.filename} into editor`);
             importBtn.addEventListener('click', async e => {
                 e.stopPropagation();
                 await importSiteFile(f.filename);
@@ -1394,7 +1397,8 @@ function createBlockElement(block, index) {
         const upBtn = document.createElement('button');
         upBtn.className = 'btn btn-icon btn-ghost';
         upBtn.textContent = '↑';
-        upBtn.title = 'Move up';
+        upBtn.title = 'Move block up';
+        upBtn.setAttribute('aria-label', 'Move block up');
         upBtn.addEventListener('click', () => moveBlock(block.id, -1));
         actions.appendChild(upBtn);
     }
@@ -1403,7 +1407,8 @@ function createBlockElement(block, index) {
         const downBtn = document.createElement('button');
         downBtn.className = 'btn btn-icon btn-ghost';
         downBtn.textContent = '↓';
-        downBtn.title = 'Move down';
+        downBtn.title = 'Move block down';
+        downBtn.setAttribute('aria-label', 'Move block down');
         downBtn.addEventListener('click', () => moveBlock(block.id, 1));
         actions.appendChild(downBtn);
     }
@@ -1412,6 +1417,7 @@ function createBlockElement(block, index) {
     delBtn.className = 'btn btn-icon btn-ghost';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete block';
+    delBtn.setAttribute('aria-label', 'Delete block');
     delBtn.addEventListener('click', () => removeBlock(block.id));
     actions.appendChild(delBtn);
 
@@ -1614,6 +1620,8 @@ function renderGalleryGrid(grid, block) {
         const rmBtn = document.createElement('button');
         rmBtn.className = 'remove-img';
         rmBtn.textContent = '✕';
+        rmBtn.title = 'Remove image';
+        rmBtn.setAttribute('aria-label', 'Remove image');
         rmBtn.addEventListener('click', async e => {
             e.stopPropagation();
             await fetch('?action=delete-file', {
@@ -1778,11 +1786,16 @@ pwdSave.addEventListener('click', async () => {
     }
 });
 
-// Allow Enter key in password modal
+// Allow Enter key in password modal & Escape key to close modal
 [pwdCurrent, pwdNew, pwdConfirm].forEach(el => {
     el.addEventListener('keydown', e => {
         if (e.key === 'Enter') pwdSave.click();
     });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && pwdModal.classList.contains('open')) {
+        pwdModal.classList.remove('open');
+    }
 });
 
 // ─── Boot: check if session is already active ─────────────────────────────────
