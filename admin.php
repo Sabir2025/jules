@@ -257,23 +257,30 @@ function ensure_upload_dir(): void {
 function scan_site_files(array $managedPages): array {
     $found   = [];
     $managed = [];
+    // Bolt ⚡ Optimization: Use associative array keys for O(1) hash map lookup instead of O(N) in_array
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        $slug = $p['slug'] ?? '';
+        if ($slug !== '') {
+            $managed[$slug . '.html'] = true;
+        }
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
 
     foreach ($files as $path) {
         $basename = basename($path);
-        // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        // Skip admin.php itself (not .html) and any .html that's already managed (O(1) lookup)
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
-        $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
-            $title = trim($m[1]);
+        // Bolt ⚡ Optimization: Read up to 64KB using stream handle instead of loading whole file into memory with file_get_contents
+        $fp = @fopen($path, 'rb');
+        if ($fp !== false) {
+            $chunk = fread($fp, 65536);
+            fclose($fp);
+            if ($chunk !== false && preg_match('/<title>\s*(.+?)\s*<\/title>/i', $chunk, $m)) {
+                $title = trim($m[1]);
+            }
         }
 
         $found[] = [
