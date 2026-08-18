@@ -1,0 +1,3 @@
+## 2026-08-18 - Hash map lookup and buffer capping for site scanning
+**Learning:** In `admin.php`, scanning unmanaged `.html` files in the site root previously checked page membership with `in_array()` on array of page slugs (O(N)) and loaded whole files into memory with `file_get_contents()` just to parse `<title>`. Capping buffer reads to 64KB (`65536` bytes) and using `$managed[$slug . '.html'] = true` reduces memory footprint and optimizes lookup time to O(1).
+**Action:** Always check file parsing utilities for unbounded file reading when only top header sections (like `<title>` or meta tags) are needed, and replace linear search in loops with array key lookups.
