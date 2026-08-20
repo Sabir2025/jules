@@ -256,23 +256,26 @@ function ensure_upload_dir(): void {
 /** Scan site root for .html files not yet managed by the admin panel. */
 function scan_site_files(array $managedPages): array {
     $found   = [];
+    // Performance Optimization: Use associative array hash map for O(1) lookup instead of in_array O(N)
     $managed = [];
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        $slug = $p['slug'] ?? '';
+        if ($slug !== '') {
+            $managed[$slug . '.html'] = true;
+        }
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
 
     foreach ($files as $path) {
         $basename = basename($path);
-        // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        // Skip admin.php itself (not .html) and any .html that's already managed (O(1) isset lookup)
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
-        $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
+        // Performance Optimization: Read max 64KB to locate <title> tag without loading large files into memory
+        $content = file_get_contents($path, false, null, 0, 65536);
+        if ($content !== false && preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
             $title = trim($m[1]);
         }
 

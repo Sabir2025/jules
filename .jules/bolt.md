@@ -1,0 +1,3 @@
+## 2025-05-18 - Hash lookup and bounded read optimization for site scanning
+**Learning:** In PHP single-file administrative tools or CMS engines that perform filesystem scans (like `scan_site_files`), checking unmanaged files with `in_array()` inside loops causes $O(N \cdot M)$ complexity. Also, reading full HTML contents with `file_get_contents($path)` to parse `<title>` tags leads to severe memory spikes on larger HTML files.
+**Action:** Always map array lookups to associative array keys `$map[$slug . '.html'] = true` for $O(1)$ `isset()` checks, and use `file_get_contents($path, false, null, 0, 65536)` to read only the initial 64KB header region when scanning HTML metadata.
