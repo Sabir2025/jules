@@ -1,0 +1,3 @@
+## 2025-08-20 - Accessible Icon Buttons and Keyboard Focus Indicators in Web Interfaces
+**Learning:** Icon-only buttons rendered dynamically in JavaScript often lack accessible names for screen readers (`aria-label`) and visible outline indicators on keyboard navigation (`:focus-visible`). Adding explicit `aria-label`s and `.btn:focus-visible` CSS rules ensures screen readers announce actions properly and keyboard users can navigate seamlessly.
+**Action:** Always check dynamically generated DOM elements (buttons, controls) for missing `aria-label` attributes and verify `:focus-visible` visual feedback in CSS.
