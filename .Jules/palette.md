@@ -1,0 +1,3 @@
+## 2025-08-21 - Accessible Controls and Focus States in Single-File PHP Admin
+**Learning:** Icon-only control buttons and non-semantic interactive components (`div.widget-item`, `div.gallery-add-btn`) in `admin.php` lack `aria-label`, visible focus indicators (`:focus-visible`), and keyboard event handlers. Adding `aria-label`, `:focus-visible` ring outlines, `tabindex="0"`, `role="button"`, and keyboard handlers significantly improves accessibility for screen readers and keyboard-only navigation.
+**Action:** Always complement `title` with `aria-label` on icon buttons, ensure custom interactive elements have `role="button"`, `tabindex="0"`, and keydown handlers (Enter/Space), and provide clear focus indicators.
