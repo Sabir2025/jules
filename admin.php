@@ -922,6 +922,12 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ═══ FOCUS VISIBLE ════════════════════════════════════════════════════════ */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
 </style>
 </head>
 <body>
@@ -969,15 +975,15 @@ body {
             <div class="sidebar-section">
                 <h3>🧩 Widgets</h3>
                 <div class="widget-list">
-                    <div class="widget-item" data-type="text">
+                    <div class="widget-item" data-type="text" tabindex="0" role="button" aria-label="Add text widget">
                         <span class="icon">📝</span>
                         <span class="label">Text</span>
                     </div>
-                    <div class="widget-item" data-type="image">
+                    <div class="widget-item" data-type="image" tabindex="0" role="button" aria-label="Add image widget">
                         <span class="icon">🖼️</span>
                         <span class="label">Image</span>
                     </div>
-                    <div class="widget-item" data-type="gallery">
+                    <div class="widget-item" data-type="gallery" tabindex="0" role="button" aria-label="Add gallery widget">
                         <span class="icon">🗂️</span>
                         <span class="label">Gallery</span>
                     </div>
@@ -1178,6 +1184,7 @@ function renderPageList() {
         renameBtn.className = 'btn btn-icon btn-ghost';
         renameBtn.textContent = '✎';
         renameBtn.title = 'Rename';
+        renameBtn.setAttribute('aria-label', 'Rename ' + (p.title || 'page'));
         renameBtn.addEventListener('click', async e => {
             e.stopPropagation();
             const newTitle = prompt('New title:', p.title);
@@ -1192,6 +1199,7 @@ function renderPageList() {
         delBtn.className = 'btn btn-icon btn-ghost';
         delBtn.textContent = '✕';
         delBtn.title = 'Delete page';
+        delBtn.setAttribute('aria-label', 'Delete ' + (p.title || 'page'));
         delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -1223,6 +1231,7 @@ function renderPageList() {
             importBtn.className = 'btn btn-icon btn-ghost';
             importBtn.textContent = '📥';
             importBtn.title = 'Import into editor';
+            importBtn.setAttribute('aria-label', 'Import ' + f.filename);
             importBtn.addEventListener('click', async e => {
                 e.stopPropagation();
                 await importSiteFile(f.filename);
@@ -1395,6 +1404,7 @@ function createBlockElement(block, index) {
         upBtn.className = 'btn btn-icon btn-ghost';
         upBtn.textContent = '↑';
         upBtn.title = 'Move up';
+        upBtn.setAttribute('aria-label', 'Move block up');
         upBtn.addEventListener('click', () => moveBlock(block.id, -1));
         actions.appendChild(upBtn);
     }
@@ -1404,6 +1414,7 @@ function createBlockElement(block, index) {
         downBtn.className = 'btn btn-icon btn-ghost';
         downBtn.textContent = '↓';
         downBtn.title = 'Move down';
+        downBtn.setAttribute('aria-label', 'Move block down');
         downBtn.addEventListener('click', () => moveBlock(block.id, 1));
         actions.appendChild(downBtn);
     }
@@ -1412,6 +1423,7 @@ function createBlockElement(block, index) {
     delBtn.className = 'btn btn-icon btn-ghost';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete block';
+    delBtn.setAttribute('aria-label', 'Delete block');
     delBtn.addEventListener('click', () => removeBlock(block.id));
     actions.appendChild(delBtn);
 
@@ -1614,6 +1626,7 @@ function renderGalleryGrid(grid, block) {
         const rmBtn = document.createElement('button');
         rmBtn.className = 'remove-img';
         rmBtn.textContent = '✕';
+        rmBtn.setAttribute('aria-label', 'Remove image');
         rmBtn.addEventListener('click', async e => {
             e.stopPropagation();
             await fetch('?action=delete-file', {
@@ -1630,9 +1643,9 @@ function renderGalleryGrid(grid, block) {
     });
 }
 
-// ─── Add widget (click) ───────────────────────────────────────────────────────
+// ─── Add widget (click / keyboard) ────────────────────────────────────────────
 $$('.widget-item').forEach(w => {
-    w.addEventListener('click', () => {
+    const addWidget = () => {
         if (!currentPageId) {
             showToast('Select a page first', 'error');
             return;
@@ -1649,6 +1662,13 @@ $$('.widget-item').forEach(w => {
         // Scroll to bottom
         canvas.scrollTop = canvas.scrollHeight;
         showToast(`Added ${type} block`);
+    };
+    w.addEventListener('click', addWidget);
+    w.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            addWidget();
+        }
     });
 });
 
