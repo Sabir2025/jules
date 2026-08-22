@@ -1,0 +1,3 @@
+## 2025-08-22 - O(1) Lookup & Chunked File Reading in Unindexed File Scans
+**Learning:** `scan_site_files` in single-file PHP apps scans unmanaged root `.html` files dynamically. Using `in_array()` on array of managed slugs scales O(M * N) as pages grow, and reading full file contents with `file_get_contents($path)` allocates unnecessary memory for extracting HTML metadata.
+**Action:** Replace linear search with associative array hash map (`isset($managed[$basename])`) and pass offset/maxlen (`file_get_contents($path, false, null, 0, 65536)`) to read only the first 64KB containing `<title>` tags.
