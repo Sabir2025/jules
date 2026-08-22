@@ -1,0 +1,3 @@
+## 2025-08-22 - Single-file PHP Admin Panel Accessibility & Focus Management
+**Learning:** Single-file PHP/JS web apps like `admin.php` frequently lack proper `:focus-visible` ring indicators and ARIA labels on dynamic icon buttons (e.g. rename, delete, move up/down). Also, custom interactive elements (`.widget-item`) need `tabindex="0"`, `role="button"`, `aria-label`, and `keydown` handlers for Enter/Space to ensure full keyboard access.
+**Action:** When working on single-file web interfaces, add a global `:focus-visible` rule and inspect all dynamically generated icon buttons for missing `aria-label`s.
