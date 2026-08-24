@@ -385,14 +385,16 @@ if ($action === 'create-page') {
     $id   = generate_page_id();
     $slug = slugify($title);
 
-    // Ensure unique slug
+    // Ensure unique slug using O(1) hash map lookup instead of O(N) array search
     $existingSlugs = [];
     foreach ($data['pages'] ?? [] as $p) {
-        $existingSlugs[] = $p['slug'] ?? '';
+        if (!empty($p['slug'])) {
+            $existingSlugs[$p['slug']] = true;
+        }
     }
     $baseSlug = $slug;
     $counter  = 1;
-    while (in_array($slug, $existingSlugs, true)) {
+    while (isset($existingSlugs[$slug])) {
         $slug = $baseSlug . '-' . ($counter++);
     }
 
