@@ -640,6 +640,7 @@ body {
     white-space: nowrap;
 }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
 .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
@@ -1178,6 +1179,7 @@ function renderPageList() {
         renameBtn.className = 'btn btn-icon btn-ghost';
         renameBtn.textContent = '✎';
         renameBtn.title = 'Rename';
+        renameBtn.setAttribute('aria-label', `Rename ${p.title || 'page'}`);
         renameBtn.addEventListener('click', async e => {
             e.stopPropagation();
             const newTitle = prompt('New title:', p.title);
@@ -1192,6 +1194,7 @@ function renderPageList() {
         delBtn.className = 'btn btn-icon btn-ghost';
         delBtn.textContent = '✕';
         delBtn.title = 'Delete page';
+        delBtn.setAttribute('aria-label', `Delete ${p.title || 'page'}`);
         delBtn.addEventListener('click', async e => {
             e.stopPropagation();
             if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
@@ -1223,6 +1226,7 @@ function renderPageList() {
             importBtn.className = 'btn btn-icon btn-ghost';
             importBtn.textContent = '📥';
             importBtn.title = 'Import into editor';
+            importBtn.setAttribute('aria-label', `Import ${f.title}`);
             importBtn.addEventListener('click', async e => {
                 e.stopPropagation();
                 await importSiteFile(f.filename);
@@ -1395,6 +1399,7 @@ function createBlockElement(block, index) {
         upBtn.className = 'btn btn-icon btn-ghost';
         upBtn.textContent = '↑';
         upBtn.title = 'Move up';
+        upBtn.setAttribute('aria-label', 'Move block up');
         upBtn.addEventListener('click', () => moveBlock(block.id, -1));
         actions.appendChild(upBtn);
     }
@@ -1404,6 +1409,7 @@ function createBlockElement(block, index) {
         downBtn.className = 'btn btn-icon btn-ghost';
         downBtn.textContent = '↓';
         downBtn.title = 'Move down';
+        downBtn.setAttribute('aria-label', 'Move block down');
         downBtn.addEventListener('click', () => moveBlock(block.id, 1));
         actions.appendChild(downBtn);
     }
@@ -1412,6 +1418,7 @@ function createBlockElement(block, index) {
     delBtn.className = 'btn btn-icon btn-ghost';
     delBtn.textContent = '✕';
     delBtn.title = 'Delete block';
+    delBtn.setAttribute('aria-label', 'Delete block');
     delBtn.addEventListener('click', () => removeBlock(block.id));
     actions.appendChild(delBtn);
 
@@ -1614,6 +1621,7 @@ function renderGalleryGrid(grid, block) {
         const rmBtn = document.createElement('button');
         rmBtn.className = 'remove-img';
         rmBtn.textContent = '✕';
+        rmBtn.setAttribute('aria-label', `Remove image ${idx + 1}`);
         rmBtn.addEventListener('click', async e => {
             e.stopPropagation();
             await fetch('?action=delete-file', {
