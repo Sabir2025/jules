@@ -1,0 +1,3 @@
+## 2025-08-25 - Hash Map Lookups and Chunked File Reads in PHP Admin Panel
+**Learning:** Checking managed files with `in_array` in `scan_site_files()` scales poorly (O(N)). Additionally, reading full file contents with `file_get_contents($path)` to parse `<title>` tags incurs heavy memory overhead for large HTML files. Using an O(1) hash map lookup (`isset($managed[$basename])`) and bounding `file_get_contents` to 64KB (`file_get_contents($path, false, null, 0, 65536)`) eliminates memory pressure and decreases scan processing time.
+**Action:** Always prefer O(1) hash map keys for file lookup checks and use byte-range bounds on `file_get_contents` when parsing metadata headers like `<title>` from unknown-sized HTML files.
