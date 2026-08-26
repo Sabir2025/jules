@@ -258,21 +258,22 @@ function scan_site_files(array $managedPages): array {
     $found   = [];
     $managed = [];
     foreach ($managedPages as $p) {
-        $managed[] = ($p['slug'] ?? '') . '.html';
+        if (!empty($p['slug'])) {
+            $managed[$p['slug'] . '.html'] = true;
+        }
     }
     $files = glob(__DIR__ . '/*.html');
     if ($files === false) return [];
 
     foreach ($files as $path) {
         $basename = basename($path);
-        // Skip admin.php itself (not .html) and any .html that's already managed
-        if ($basename === 'admin.php' || in_array($basename, $managed, true)) continue;
+        // Skip admin.php itself (not .html) and any .html that's already managed (O(1) lookup)
+        if ($basename === 'admin.php' || isset($managed[$basename])) continue;
 
         $title = pathinfo($basename, PATHINFO_FILENAME);
-        $firstLine = '';
-        // Try to extract <title> from the file
-        $content = file_get_contents($path);
-        if (preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
+        // Optimize memory and speed: read only first 64KB to locate <title> tag
+        $content = file_get_contents($path, false, null, 0, 65536);
+        if ($content !== false && preg_match('/<title>\s*(.+?)\s*<\/title>/i', $content, $m)) {
             $title = trim($m[1]);
         }
 
@@ -385,14 +386,16 @@ if ($action === 'create-page') {
     $id   = generate_page_id();
     $slug = slugify($title);
 
-    // Ensure unique slug
+    // Ensure unique slug with O(1) hash map lookup
     $existingSlugs = [];
     foreach ($data['pages'] ?? [] as $p) {
-        $existingSlugs[] = $p['slug'] ?? '';
+        if (isset($p['slug'])) {
+            $existingSlugs[$p['slug']] = true;
+        }
     }
     $baseSlug = $slug;
     $counter  = 1;
-    while (in_array($slug, $existingSlugs, true)) {
+    while (isset($existingSlugs[$slug])) {
         $slug = $baseSlug . '-' . ($counter++);
     }
 
